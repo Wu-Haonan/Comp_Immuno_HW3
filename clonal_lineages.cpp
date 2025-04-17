@@ -237,7 +237,7 @@ unordered_map<int,int> clonal_lineage_search(const unordered_map<int,set<int>>& 
                     if (clonal_lineage[i] == 0) {
                         clonal_lineage[i] = component;
                         q.push(i);
-                        cout << i << " : " << component << endl;
+                        //cout << i << " : " << component << endl;
                     }
                 }
             }
@@ -246,6 +246,7 @@ unordered_map<int,int> clonal_lineage_search(const unordered_map<int,set<int>>& 
     }
     return clonal_lineage;
 }
+
 
 int main() {
     CDR3Dataset data;
@@ -261,6 +262,49 @@ int main() {
     // }
     // cout << num_edge << " ; " << num_vertex << endl;
     unordered_map<int,int> clonal_lineage = clonal_lineage_search(Vertex_map);
-    cout << Components.size() << endl;
+    
+
+    /*Problem 4, Statistics for clonal lineages */
+    cout << "Num of clonal lineage: " <<Components.size() << endl;
+    int max_component = 0;
+    int num_in_max_lineage = 0;
+    int greater_10 = 0;
+
+    unordered_map<string,int> V_usage_map;
+    for (const auto& comp : Components){
+        int count_lineage = 0;
+        int firstID = *comp.second.begin();
+        string V_gene = data.findById(firstID)->getVgene();
+        V_usage_map[V_gene] ++;
+        for (const auto& ID : comp.second){
+            count_lineage += data.findById(ID)->getCount();
+        }
+        if (count_lineage > num_in_max_lineage){
+            num_in_max_lineage = count_lineage;
+            max_component = comp.first;
+        }
+        if (count_lineage >= 10){
+            greater_10 ++;
+        }
+    }
+    cout << "Num of seqs in the largest lineage: " << num_in_max_lineage << endl;
+    cout << "Num of clonal lineages presented by at least 10 sequences: " << greater_10 << endl;
+
+    /*Problem 5, usage of V genes*/
+    std::ofstream VFile("V_usages.txt");
+    for (const auto& pair : V_usage_map){
+        VFile << pair.first << ": " << pair.second << std::endl;
+    }
+
+    VFile.close();
+
+    /*Problem 6 prepared*/
+    std::ofstream fasta("largest_clonal_lineage_CDR3.fasta");
+    for (const auto& ID : Components[max_component]){
+        fasta <<  "> CDR3: " << ID << std::endl;
+        fasta << data.findById(ID)->getSequence() << endl;
+    }
+
+    fasta.close();
     return 0;
 }
